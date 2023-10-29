@@ -1,6 +1,8 @@
 export type CreateQRCodeBody = AttendanceQRBody;
 export type UpdateQRCodeBody = Partial<CreateQRCodeBody>;
 export type AttendanceQRBody = {
+  isActive?: boolean;
+  createdBy: string;
   template: 'attendance';
   title: string;
   activationDays: number[];
@@ -10,5 +12,7 @@ export type AttendanceQRBody = {
 
     // TODO: time offset for timezones
   };
+
+  deactivationDate: Date;
   geofence?: { lat: number; lng: number }[];
 };

@@ -3,8 +3,16 @@ import { HydratedDocument } from 'mongoose';
 
 export type QRcodeDocument = HydratedDocument<QRcode>;
 
-@Schema()
+@Schema({
+  collection: 'QRCodes',
+})
 export class QRcode {
+  @Prop()
+  isActive: boolean;
+
+  @Prop({ required: true })
+  createdBy: string;
+
   @Prop()
   title: string;
 
@@ -26,6 +34,9 @@ export class QRcode {
 
     // TODO: time offset for timezones
   };
+
+  @Prop()
+  deactivationDate: Date;
 
   @Prop(
     raw([

@@ -6,6 +6,7 @@ import {
   Param,
   Post,
   Put,
+  Query,
 } from '@nestjs/common';
 import { CreateQRCodeBody, UpdateQRCodeBody } from './qrcode.types';
 import { QrcodeService } from './qrcode.service';
@@ -13,7 +14,7 @@ import { QrcodeService } from './qrcode.service';
 @Controller('qrcode')
 export class QrcodeController {
   constructor(private qrCodeService: QrcodeService) {}
-  @Post('create')
+  @Post()
   @HttpCode(201)
   createQRCode(@Body() body: CreateQRCodeBody) {
     return this.qrCodeService.create(body);
@@ -29,5 +30,11 @@ export class QrcodeController {
   @HttpCode(200)
   getQRCodeById(@Param('qrId') qrId: string) {
     return this.qrCodeService.getById(qrId);
+  }
+
+  @Get()
+  @HttpCode(200)
+  getQRCodeByUserId(@Query() query) {
+    return this.qrCodeService.getByUserId(query?.userId);
   }
 }
