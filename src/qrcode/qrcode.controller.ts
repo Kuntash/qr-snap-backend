@@ -3,6 +3,7 @@ import {
   Controller,
   Get,
   HttpCode,
+  Logger,
   Param,
   Post,
   Put,
@@ -23,6 +24,7 @@ export class QrcodeController {
   @Put(':qrId')
   @HttpCode(204)
   updateQRCode(@Param('qrId') qrId: string, @Body() body: UpdateQRCodeBody) {
+    Logger.warn(body);
     return this.qrCodeService.update(qrId, body);
   }
 

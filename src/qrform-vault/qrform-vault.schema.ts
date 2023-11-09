@@ -12,10 +12,24 @@ export class QRFormVault {
   qrId: QRcode;
 
   @Prop()
-  rollNo: string;
+  rollNo: number;
 
   @Prop()
   name: string;
+
+  @Prop()
+  submissionDate: Date;
+
+  @Prop({
+    type: {
+      lat: Number,
+      lng: Number,
+    },
+  })
+  location: {
+    lat: number;
+    lng: number;
+  };
 }
 
 export const QRFormVaultSchema = SchemaFactory.createForClass(QRFormVault);

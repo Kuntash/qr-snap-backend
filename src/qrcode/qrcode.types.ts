@@ -14,5 +14,10 @@ export type AttendanceQRBody = {
   };
 
   deactivationDate: Date;
-  geofence?: { lat: number; lng: number }[];
+  geofence?: {
+    north: number;
+    south: number;
+    east: number;
+    west: number;
+  };
 };

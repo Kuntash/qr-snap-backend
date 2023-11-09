@@ -5,6 +5,7 @@ import { QRcode } from './qrcode.schema';
 import { Model, Types } from 'mongoose';
 import { SchedulerRegistry } from '@nestjs/schedule';
 import { CronJob } from 'cron';
+import { isTimeBetween } from 'src/utils/utils.qrcode';
 @Injectable()
 export class QrcodeService {
   constructor(
@@ -39,6 +40,20 @@ export class QrcodeService {
     );
     try {
       if (qrUpdateObject?.template === 'attendance') {
+        const currentTime = new Date();
+
+        // Extract the hours and minutes from the Date object
+        const currentHours = `${currentTime.getHours()}`.padStart(2, '0');
+        const currentMinutes = `${currentTime.getMinutes()}`.padStart(2, '0');
+        if (
+          isTimeBetween({
+            startTime: tempQRUpdateObject.activationTimes.fromTime,
+            endTime: tempQRUpdateObject.activationTimes.toTime,
+            checkTime: `${currentHours}:${currentMinutes}`,
+          })
+        ) {
+          updatedQRcodeDocument.isActive = true;
+        }
         /* Logic to activate the QR code */
         /*
            1. create a cron job that activates the qr code at the start time and deactivates the qr code at the end time.
@@ -69,7 +84,6 @@ export class QrcodeService {
 
         /* qr code activation days */
         const days = qrUpdateObject?.activationDays?.join(',');
-
         /* cron expression to activate qr code */
         const startActivationCronExpression = `0 ${startMinute} ${startHour} * * ${days}`;
         const startActivationCronName = `startActivationCronJob-${qrId}`;
@@ -98,7 +112,7 @@ export class QrcodeService {
           qrId,
         });
       }
-      return updatedQRcodeDocument;
+      return updatedQRcodeDocument.save();
     } catch (error) {
       Logger.log(error);
       throw new HttpException('Bad Request', HttpStatus.BAD_REQUEST);
@@ -140,6 +154,10 @@ export class QrcodeService {
   }) {
     const { cronExpression, cronName, ...rest } = args;
 
+    if (this.schedulerRegistry.doesExist('cron', cronName)) {
+      this.schedulerRegistry.deleteCronJob(cronName);
+      Logger.log(`Cron job ${cronName} is deleted`);
+    }
     const job = new CronJob(cronExpression, () => {
       Logger.log(`Cron job ${cronName} is running`);
       this.updateQRActivationStatus(rest);
@@ -147,6 +165,7 @@ export class QrcodeService {
 
     this.schedulerRegistry.addCronJob(cronName, job);
     job.start();
+    Logger.log(`Cron: ${cronName} initialized`);
   }
 
   deleteQRCodeCronJobsCron(args: {

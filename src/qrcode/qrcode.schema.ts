@@ -38,15 +38,20 @@ export class QRcode {
   @Prop()
   deactivationDate: Date;
 
-  @Prop(
-    raw([
-      {
-        lat: { type: Number },
-        lng: { type: Number },
-      },
-    ]),
-  )
-  geofence?: { lat: number; lng: number }[];
+  @Prop({
+    type: {
+      north: Number,
+      south: Number,
+      east: Number,
+      west: Number,
+    },
+  })
+  geofence?: {
+    north: number;
+    south: number;
+    east: number;
+    west: number;
+  };
 }
 
 export const QRcodeSchema = SchemaFactory.createForClass(QRcode);
