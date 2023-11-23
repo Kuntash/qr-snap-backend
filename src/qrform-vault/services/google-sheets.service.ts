@@ -1,5 +1,4 @@
 import { Injectable } from '@nestjs/common';
-import { readFileSync } from 'fs';
 import { google, sheets_v4 } from 'googleapis';
 
 @Injectable()
@@ -8,9 +7,8 @@ export class GoogleSheetsService {
   private sheets: sheets_v4.Sheets;
 
   constructor() {
-    const credentials = JSON.parse(
-      readFileSync(process.env.GOOGLE_CREDENTIALS_PATH).toString(),
-    );
+    const credentials = JSON.parse(process.env.GOOGLE_CREDENTIALS);
+
     this.auth = new google.auth.GoogleAuth({
       credentials,
       scopes: ['https://www.googleapis.com/auth/spreadsheets'],
