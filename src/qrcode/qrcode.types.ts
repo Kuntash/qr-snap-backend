@@ -14,6 +14,7 @@ export type AttendanceQRBody = {
   };
 
   deactivationDate: Date;
+  googleSheetURL?: string;
   geofence?: {
     north: number;
     south: number;

@@ -6,6 +6,10 @@
 #yarn
 .yarn/*
 
+
+#Google cloud credentials
+google-credentials.json
+
 # Logs
 logs
 *.log

@@ -1,16 +1,19 @@
 import { HttpException, HttpStatus, Injectable, Logger } from '@nestjs/common';
-import { CreateQRFormVaultDocumentBody } from './qrform-vault.types';
+import { CreateQRFormVaultDocumentBody } from '../qrform-vault.types';
 import { InjectModel } from '@nestjs/mongoose';
-import { QRFormVault } from './qrform-vault.schema';
+import { QRFormVault } from '../qrform-vault.schema';
 import { Model } from 'mongoose';
 import { QRcode } from 'src/qrcode/qrcode.schema';
 import { isPointInsideRectangle } from 'src/utils/utils.qrform-vault';
+import { GoogleSheetsService } from './google-sheets.service';
+import { format } from 'date-fns';
 
 @Injectable()
 export class QRFormVaultService {
   constructor(
     @InjectModel(QRFormVault.name) private qrFormVaultModel: Model<QRFormVault>,
     @InjectModel(QRcode.name) private qrCodeModel: Model<QRcode>,
+    private googleSheetsService: GoogleSheetsService,
   ) {}
   async create(formSubmission: CreateQRFormVaultDocumentBody) {
     if (formSubmission?.template === 'attendance') {
@@ -66,6 +69,7 @@ export class QRFormVaultService {
       const existingSubmission = await this.qrFormVaultModel.aggregate(
         hasAlreadySubmittedTodayAggregation,
       );
+
       if (existingSubmission?.length) {
         throw new HttpException(
           'You have already submitted your attendance for today.',
@@ -73,6 +77,7 @@ export class QRFormVaultService {
         );
       }
 
+      /* Geofence related stuff if qr code has geofence enabled */
       if (qrCode?.geofence) {
         const { north, south, east, west } = qrCode?.geofence;
         const { location } = formSubmission;
@@ -90,6 +95,54 @@ export class QRFormVaultService {
             'Please submit your attendance from inside the class',
             HttpStatus.FORBIDDEN,
           );
+        }
+      }
+
+      /* Check if the roll is already there in the sheet, if it is then update otherwise append */
+      if (qrCode?.googleSheetURL) {
+        const allRollNo = await this.googleSheetsService.readSheetValues({
+          spreadSheetId: qrCode?.googleSheetURL,
+          range: 'A1:A200',
+        });
+        const allRollNoFlattened = allRollNo.flat();
+        const doesRollNoExists = !!allRollNoFlattened.find((data) => {
+          return data === String(formSubmission?.rollNo);
+        });
+        if (!doesRollNoExists) {
+          const rowNo = allRollNoFlattened.length + 1;
+          this.googleSheetsService.writeCellValue({
+            spreadSheetId: qrCode?.googleSheetURL,
+            values: [
+              [
+                formSubmission?.rollNo,
+                formSubmission.name,
+                format(new Date(), 'yyyy-MM-dd'),
+              ],
+            ],
+            range: `A${rowNo}:B${rowNo}`,
+          });
+        } else {
+          const currentRollNoSheetIndex =
+            allRollNoFlattened.findIndex(
+              (data) => data === String(formSubmission?.rollNo),
+            ) + 1;
+
+          const currentRollNoData =
+            await this.googleSheetsService.readSheetValues({
+              spreadSheetId: qrCode?.googleSheetURL,
+              range: `A${currentRollNoSheetIndex}:ZZZ${currentRollNoSheetIndex}`,
+            });
+
+          const updatedRollNoData = [
+            ...currentRollNoData.flat(),
+            format(new Date(), 'yyyy-MM-dd'),
+          ];
+
+          await this.googleSheetsService.updateCellValues({
+            spreadSheetId: qrCode?.googleSheetURL,
+            values: [updatedRollNoData],
+            range: `A${currentRollNoSheetIndex}:ZZZ${currentRollNoSheetIndex}`,
+          });
         }
       }
       const createdQRFormVaultDocument = new this.qrFormVaultModel({

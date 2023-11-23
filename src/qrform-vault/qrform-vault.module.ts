@@ -1,9 +1,10 @@
 import { Module } from '@nestjs/common';
-import { QRFormVaultService } from './qrform-vault.service';
+import { QRFormVaultService } from './services/qrform-vault.service';
 import { MongooseModule } from '@nestjs/mongoose';
 import { QRFormVault, QRFormVaultSchema } from './qrform-vault.schema';
 import { QRFormVaultController } from './qrform-vault.controller';
 import { QRcode, QRcodeSchema } from 'src/qrcode/qrcode.schema';
+import { GoogleSheetsService } from './services/google-sheets.service';
 
 @Module({
   imports: [
@@ -13,6 +14,6 @@ import { QRcode, QRcodeSchema } from 'src/qrcode/qrcode.schema';
     ]),
   ],
   controllers: [QRFormVaultController],
-  providers: [QRFormVaultService],
+  providers: [QRFormVaultService, GoogleSheetsService],
 })
 export class QRFormVaultModule {}

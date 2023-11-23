@@ -38,6 +38,13 @@ export class QRcode {
   @Prop()
   deactivationDate: Date;
 
+  @Prop()
+  googleSheetURL: string;
+
+  // last sheet url that has been set, if this is same as the current sheet trigger initiliase header func, otherwise don't
+  @Prop()
+  lastSheetURL: string;
+
   @Prop({
     type: {
       north: Number,

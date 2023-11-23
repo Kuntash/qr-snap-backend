@@ -1,5 +1,5 @@
 import { Body, Controller, HttpCode, Post } from '@nestjs/common';
-import { QRFormVaultService } from './qrform-vault.service';
+import { QRFormVaultService } from './services/qrform-vault.service';
 import { CreateQRFormVaultDocumentBody } from './qrform-vault.types';
 
 @Controller('qrform-vault')

@@ -6,11 +6,13 @@ import { Model, Types } from 'mongoose';
 import { SchedulerRegistry } from '@nestjs/schedule';
 import { CronJob } from 'cron';
 import { isTimeBetween } from 'src/utils/utils.qrcode';
+import { GoogleSheetsService } from 'src/qrform-vault/services/google-sheets.service';
 @Injectable()
 export class QrcodeService {
   constructor(
     @InjectModel(QRcode.name) private qrCodeModel: Model<QRcode>,
     private schedulerRegistry: SchedulerRegistry,
+    private googleSheetService: GoogleSheetsService,
   ) {}
   async create(qrcode: CreateQRCodeBody) {
     const createdQRcode = new this.qrCodeModel(qrcode);
@@ -31,6 +33,7 @@ export class QrcodeService {
       _id: new Types.ObjectId(qrId),
     };
 
+    const oldQRcodeDocument = await this.qrCodeModel.findOne(filter);
     const updatedQRcodeDocument = await this.qrCodeModel.findOneAndUpdate(
       filter,
       tempQRUpdateObject,
@@ -40,6 +43,24 @@ export class QrcodeService {
     );
     try {
       if (qrUpdateObject?.template === 'attendance') {
+        /* google sheet stuff */
+
+        if (!!qrUpdateObject?.googleSheetURL) {
+          /* initialise sheet headers if its a new google sheet url or its the first one */
+          if (
+            !oldQRcodeDocument?.lastSheetURL ||
+            oldQRcodeDocument?.lastSheetURL === qrUpdateObject?.googleSheetURL
+          ) {
+            await this.googleSheetService.writeCellValue({
+              range: 'A1:C1',
+              spreadSheetId: qrUpdateObject?.googleSheetURL,
+              values: [['Roll No.', 'Name']],
+            });
+
+            updatedQRcodeDocument.lastSheetURL = qrUpdateObject?.googleSheetURL;
+          }
+        }
+
         const currentTime = new Date();
 
         // Extract the hours and minutes from the Date object
